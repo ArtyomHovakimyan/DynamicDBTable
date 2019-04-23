@@ -13,37 +13,42 @@ namespace Mic.Volo.InsertData
 
         static void Main(string[] args)
         {
-            string connectionString;
-            // for example my  (localdb)\MSSQLLocalDB
-            Console.WriteLine("Enter your Data Source: ");
-            string source = Console.ReadLine();
-            Console.WriteLine("Enter your database Name: ");
-            string dbname = Console.ReadLine();
-            connectionString = string.Format("Data Source={0};Initial Catalog=master;Integrated Security=True;",source);
-            string createdatabase = "CREATE DATABASE " + dbname;
+            string connectionString = @"Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=mydbname;Integrated Security=True;Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False";
 
-            string createcategoriestable = "use master; CREATE TABLE [dbo].[Category] (" +
+            string createtablewallet = "use mydbname;DROP Table IF EXISTS Wallet,Category;" +
+                " CREATE TABLE Wallet (" +
+                " [Id]          UNIQUEIDENTIFIER NOT NULL," +
+                " [CategoryId] UNIQUEIDENTIFIER NOT NULL," +
+                "[Amount] MONEY NOT NULL," +
+                " [Comment] NVARCHAR(MAX)   NULL," +
+                "[Day] DATETIME2(7)    NOT NULL," +
+                "[DateCreated] DATETIME2(7)    CONSTRAINT[DF_Wallet_DateCreated] DEFAULT(getutcdate()) NOT NULL," +
+                "CONSTRAINT[PK_Wallet] PRIMARY KEY CLUSTERED([Id] ASC)," +
+                " CONSTRAINT[FK_Wallet_Category] FOREIGN KEY([CategoryId]) REFERENCES[dbo].[Category] ([Id]) ON DELETE CASCADE ON UPDATE CASCADE" +
+                ");";
+            string createtbalecategories = "use mydbname;DROP Table IF EXISTS Category; " +
+                "CREATE TABLE Category (" +
                 " [Id]    UNIQUEIDENTIFIER NOT NULL," +
                 "[Title] NVARCHAR(MAX)   NOT NULL," +
-                " CONSTRAINT[PK_Category] PRIMARY KEY CLUSTERED([Id] ASC)" +
+                "CONSTRAINT[PK_Category] PRIMARY KEY CLUSTERED([Id] ASC)" +
                 ");";
-            
-            try
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                using (SqlConnection connection=new SqlConnection(connectionString))
+                try
                 {
-                    SqlCommand command = new SqlCommand(createdatabase,connection);
                     connection.Open();
-                    Console.WriteLine("connected");
-                    command = new SqlCommand(createcategoriestable, connection);
-                    Console.WriteLine("Db created successfully....");
-                    connection.Close();
+                    SqlCommand command1 = new SqlCommand(createtablewallet, connection);
+                    SqlCommand command = new SqlCommand(createtbalecategories, connection);
+                    command1.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
                 }
+                catch (SqlException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error "+ex.Message);
-            }
+
         }
     }
 }
